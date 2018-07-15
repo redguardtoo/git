@@ -99,12 +99,12 @@ test_expect_success '--dry-run with stuff to commit returns ok' '
 	git commit -m next -a --dry-run
 '
 
-test_expect_failure '--short with stuff to commit returns ok' '
+test_expect_success '--short with stuff to commit returns ok' '
 	echo bongo bongo bongo >>file &&
 	git commit -m next -a --short
 '
 
-test_expect_failure '--porcelain with stuff to commit returns ok' '
+test_expect_success '--porcelain with stuff to commit returns ok' '
 	echo bongo bongo bongo >>file &&
 	git commit -m next -a --porcelain
 '
@@ -703,11 +703,11 @@ test_expect_success '--dry-run with conflicts fixed from a merge' '
 	git commit --dry-run
 '
 
-test_expect_failure '--short with conflicts fixed from a merge' '
+test_expect_success '--short with conflicts fixed from a merge' '
 	git commit --short
 '
 
-test_expect_failure '--porcelain with conflicts fixed from a merge' '
+test_expect_success '--porcelain with conflicts fixed from a merge' '
 	git commit --porcelain
 '
 

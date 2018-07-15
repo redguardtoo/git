@@ -718,6 +718,39 @@ static void wt_status_collect_untracked(struct wt_status *s)
 		s->untracked_in_ms = (getnanotime() - t_begin) / 1000000;
 }
 
+static int has_unmerged(const struct wt_status *s)
+{
+	int i;
+
+	for (i = 0; i < s->change.nr; i++) {
+		struct wt_status_change_data *d;
+		d = s->change.items[i].util;
+		if (d->stagemask)
+			return 1;
+	}
+	return 0;
+}
+
+static void wt_status_mark_committable(
+		struct wt_status *s, const struct wt_status_state *state)
+{
+	int i;
+
+	if (state->merge_in_progress && !has_unmerged(s)) {
+		s->committable = 1;
+		return;
+	}
+
+	for (i = 0; i < s->change.nr; i++) {
+		struct wt_status_change_data *d = (s->change.items[i]).util;
+
+		if (d->index_status && d->index_status != DIFF_STATUS_UNMERGED) {
+			s->committable = 1;
+			return;
+		}
+	}
+}
+
 void wt_status_collect(struct wt_status *s, const struct wt_status_state *state)
 {
 	wt_status_collect_changes_worktree(s);
@@ -728,6 +761,8 @@ void wt_status_collect(struct wt_status *s, const struct wt_status_state *state)
 		wt_status_collect_changes_index(s);
 
 	wt_status_collect_untracked(s);
+
+	wt_status_mark_committable(s, state);
 }
 
 static void wt_longstatus_print_unmerged(const struct wt_status *s)
@@ -753,28 +788,28 @@ static void wt_longstatus_print_unmerged(const struct wt_status *s)
 
 }
 
-static void wt_longstatus_print_updated(struct wt_status *s)
+static void wt_longstatus_print_updated(const struct wt_status *s)
 {
-	int shown_header = 0;
 	int i;
+
+	if (!s->committable) {
+		return;
+	}
+
+	wt_longstatus_print_cached_header(s);
 
 	for (i = 0; i < s->change.nr; i++) {
 		struct wt_status_change_data *d;
 		struct string_list_item *it;
 		it = &(s->change.items[i]);
 		d = it->util;
-		if (!d->index_status ||
-		    d->index_status == DIFF_STATUS_UNMERGED)
-			continue;
-		if (!shown_header) {
-			wt_longstatus_print_cached_header(s);
-			s->committable = 1;
-			shown_header = 1;
+		if (d->index_status &&
+		    d->index_status != DIFF_STATUS_UNMERGED) {
+			wt_longstatus_print_change_data(s, WT_STATUS_UPDATED, it);
 		}
-		wt_longstatus_print_change_data(s, WT_STATUS_UPDATED, it);
 	}
-	if (shown_header)
-		wt_longstatus_print_trailer(s);
+
+	wt_longstatus_print_trailer(s);
 }
 
 /*
@@ -1056,21 +1091,7 @@ static void wt_longstatus_print_tracking(const struct wt_status *s)
 	strbuf_release(&sb);
 }
 
-static int has_unmerged(const struct wt_status *s)
-{
-	int i;
-
-	for (i = 0; i < s->change.nr; i++) {
-		struct wt_status_change_data *d;
-		d = s->change.items[i].util;
-		if (d->stagemask)
-			return 1;
-	}
-	return 0;
-}
-
-static void show_merge_in_progress(struct wt_status *s,
-				const struct wt_status_state *state,
+static void show_merge_in_progress(const struct wt_status *s,
 				const char *color)
 {
 	if (has_unmerged(s)) {
@@ -1082,7 +1103,6 @@ static void show_merge_in_progress(struct wt_status *s,
 					 _("  (use \"git merge --abort\" to abort the merge)"));
 		}
 	} else {
-		s-> committable = 1;
 		status_printf_ln(s, color,
 			_("All conflicts fixed but you are still merging."));
 		if (s->hints)
@@ -1576,12 +1596,12 @@ void wt_status_clear_state(struct wt_status_state *state)
 	free(state->detached_from);
 }
 
-static void wt_longstatus_print_state(struct wt_status *s,
+static void wt_longstatus_print_state(const struct wt_status *s,
 				      const struct wt_status_state *state)
 {
 	const char *state_color = color(WT_STATUS_HEADER, s);
 	if (state->merge_in_progress)
-		show_merge_in_progress(s, state, state_color);
+		show_merge_in_progress(s, state_color);
 	else if (state->am_in_progress)
 		show_am_in_progress(s, state, state_color);
 	else if (state->rebase_in_progress || state->rebase_interactive_in_progress)
@@ -1594,7 +1614,7 @@ static void wt_longstatus_print_state(struct wt_status *s,
 		show_bisect_in_progress(s, state, state_color);
 }
 
-static void wt_longstatus_print(struct wt_status *s, const struct wt_status_state *state)
+static void wt_longstatus_print(const struct wt_status *s, const struct wt_status_state *state)
 {
 	const char *branch_color = color(WT_STATUS_ONBRANCH, s);
 	const char *branch_status_color = color(WT_STATUS_HEADER, s);
