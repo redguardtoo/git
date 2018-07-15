@@ -33,7 +33,7 @@ static char default_wt_status_colors[][COLOR_MAXLEN] = {
 	GIT_COLOR_NIL,    /* WT_STATUS_ONBRANCH */
 };
 
-static const char *color(int slot, struct wt_status *s)
+static const char *color(int slot, const struct wt_status *s)
 {
 	const char *c = "";
 	if (want_color(s->use_color))
@@ -43,7 +43,7 @@ static const char *color(int slot, struct wt_status *s)
 	return c;
 }
 
-static void status_vprintf(struct wt_status *s, int at_bol, const char *color,
+static void status_vprintf(const struct wt_status *s, int at_bol, const char *color,
 		const char *fmt, va_list ap, const char *trail)
 {
 	struct strbuf sb = STRBUF_INIT;
@@ -89,7 +89,7 @@ static void status_vprintf(struct wt_status *s, int at_bol, const char *color,
 	strbuf_release(&sb);
 }
 
-void status_printf_ln(struct wt_status *s, const char *color,
+void status_printf_ln(const struct wt_status *s, const char *color,
 			const char *fmt, ...)
 {
 	va_list ap;
@@ -99,7 +99,7 @@ void status_printf_ln(struct wt_status *s, const char *color,
 	va_end(ap);
 }
 
-void status_printf(struct wt_status *s, const char *color,
+void status_printf(const struct wt_status *s, const char *color,
 			const char *fmt, ...)
 {
 	va_list ap;
@@ -109,7 +109,7 @@ void status_printf(struct wt_status *s, const char *color,
 	va_end(ap);
 }
 
-static void status_printf_more(struct wt_status *s, const char *color,
+static void status_printf_more(const struct wt_status *s, const char *color,
 			       const char *fmt, ...)
 {
 	va_list ap;
@@ -140,7 +140,7 @@ void wt_status_prepare(struct wt_status *s)
 	s->display_comment_prefix = 0;
 }
 
-static void wt_longstatus_print_unmerged_header(struct wt_status *s)
+static void wt_longstatus_print_unmerged_header(const struct wt_status *s)
 {
 	int i;
 	int del_mod_conflict = 0;
@@ -192,7 +192,7 @@ static void wt_longstatus_print_unmerged_header(struct wt_status *s)
 	status_printf_ln(s, c, "%s", "");
 }
 
-static void wt_longstatus_print_cached_header(struct wt_status *s)
+static void wt_longstatus_print_cached_header(const struct wt_status *s)
 {
 	const char *c = color(WT_STATUS_HEADER, s);
 
@@ -208,7 +208,7 @@ static void wt_longstatus_print_cached_header(struct wt_status *s)
 	status_printf_ln(s, c, "%s", "");
 }
 
-static void wt_longstatus_print_dirty_header(struct wt_status *s,
+static void wt_longstatus_print_dirty_header(const struct wt_status *s,
 					     int has_deleted,
 					     int has_dirty_submodules)
 {
@@ -227,7 +227,7 @@ static void wt_longstatus_print_dirty_header(struct wt_status *s,
 	status_printf_ln(s, c, "%s", "");
 }
 
-static void wt_longstatus_print_other_header(struct wt_status *s,
+static void wt_longstatus_print_other_header(const struct wt_status *s,
 					     const char *what,
 					     const char *how)
 {
@@ -239,7 +239,7 @@ static void wt_longstatus_print_other_header(struct wt_status *s,
 	status_printf_ln(s, c, "%s", "");
 }
 
-static void wt_longstatus_print_trailer(struct wt_status *s)
+static void wt_longstatus_print_trailer(const struct wt_status *s)
 {
 	status_printf_ln(s, color(WT_STATUS_HEADER, s), "%s", "");
 }
@@ -305,7 +305,7 @@ static int maxwidth(const char *(*label)(int), int minval, int maxval)
 	return result;
 }
 
-static void wt_longstatus_print_unmerged_data(struct wt_status *s,
+static void wt_longstatus_print_unmerged_data(const struct wt_status *s,
 					      struct string_list_item *it)
 {
 	const char *c = color(WT_STATUS_UNMERGED, s);
@@ -332,7 +332,7 @@ static void wt_longstatus_print_unmerged_data(struct wt_status *s,
 	strbuf_release(&onebuf);
 }
 
-static void wt_longstatus_print_change_data(struct wt_status *s,
+static void wt_longstatus_print_change_data(const struct wt_status *s,
 					    int change_type,
 					    struct string_list_item *it)
 {
@@ -718,7 +718,7 @@ static void wt_status_collect_untracked(struct wt_status *s)
 		s->untracked_in_ms = (getnanotime() - t_begin) / 1000000;
 }
 
-void wt_status_collect(struct wt_status *s)
+void wt_status_collect(struct wt_status *s, const struct wt_status_state *state)
 {
 	wt_status_collect_changes_worktree(s);
 
@@ -726,10 +726,11 @@ void wt_status_collect(struct wt_status *s)
 		wt_status_collect_changes_initial(s);
 	else
 		wt_status_collect_changes_index(s);
+
 	wt_status_collect_untracked(s);
 }
 
-static void wt_longstatus_print_unmerged(struct wt_status *s)
+static void wt_longstatus_print_unmerged(const struct wt_status *s)
 {
 	int shown_header = 0;
 	int i;
@@ -767,7 +768,7 @@ static void wt_longstatus_print_updated(struct wt_status *s)
 			continue;
 		if (!shown_header) {
 			wt_longstatus_print_cached_header(s);
-			s->commitable = 1;
+			s->committable = 1;
 			shown_header = 1;
 		}
 		wt_longstatus_print_change_data(s, WT_STATUS_UPDATED, it);
@@ -781,7 +782,7 @@ static void wt_longstatus_print_updated(struct wt_status *s)
  *  0 : no change
  *  1 : some change but no delete
  */
-static int wt_status_check_worktree_changes(struct wt_status *s,
+static int wt_status_check_worktree_changes(const struct wt_status *s,
 					     int *dirty_submodules)
 {
 	int i;
@@ -805,7 +806,7 @@ static int wt_status_check_worktree_changes(struct wt_status *s,
 	return changes;
 }
 
-static void wt_longstatus_print_changed(struct wt_status *s)
+static void wt_longstatus_print_changed(const struct wt_status *s)
 {
 	int i, dirty_submodules;
 	int worktree_changes = wt_status_check_worktree_changes(s, &dirty_submodules);
@@ -837,7 +838,7 @@ static int stash_count_refs(struct object_id *ooid, struct object_id *noid,
 	return 0;
 }
 
-static void wt_longstatus_print_stash_summary(struct wt_status *s)
+static void wt_longstatus_print_stash_summary(const struct wt_status *s)
 {
 	int stash_count = 0;
 
@@ -849,7 +850,7 @@ static void wt_longstatus_print_stash_summary(struct wt_status *s)
 				 stash_count);
 }
 
-static void wt_longstatus_print_submodule_summary(struct wt_status *s, int uncommitted)
+static void wt_longstatus_print_submodule_summary(const struct wt_status *s, int uncommitted)
 {
 	struct child_process sm_summary = CHILD_PROCESS_INIT;
 	struct strbuf cmd_stdout = STRBUF_INIT;
@@ -895,8 +896,8 @@ static void wt_longstatus_print_submodule_summary(struct wt_status *s, int uncom
 	strbuf_release(&summary);
 }
 
-static void wt_longstatus_print_other(struct wt_status *s,
-				      struct string_list *l,
+static void wt_longstatus_print_other(const struct wt_status *s,
+				      const struct string_list *l,
 				      const char *what,
 				      const char *how)
 {
@@ -969,7 +970,7 @@ void wt_status_add_cut_line(FILE *fp)
 	strbuf_release(&buf);
 }
 
-static void wt_longstatus_print_verbose(struct wt_status *s)
+static void wt_longstatus_print_verbose(const struct wt_status *s)
 {
 	struct rev_info rev;
 	struct setup_revision_opt opt;
@@ -1000,7 +1001,7 @@ static void wt_longstatus_print_verbose(struct wt_status *s)
 		rev.diffopt.use_color = 0;
 		wt_status_add_cut_line(s->fp);
 	}
-	if (s->verbose > 1 && s->commitable) {
+	if (s->verbose > 1 && s->committable) {
 		/* print_updated() printed a header, so do we */
 		if (s->fp != stdout)
 			wt_longstatus_print_trailer(s);
@@ -1021,7 +1022,7 @@ static void wt_longstatus_print_verbose(struct wt_status *s)
 	}
 }
 
-static void wt_longstatus_print_tracking(struct wt_status *s)
+static void wt_longstatus_print_tracking(const struct wt_status *s)
 {
 	struct strbuf sb = STRBUF_INIT;
 	const char *cp, *ep, *branch_name;
@@ -1055,7 +1056,7 @@ static void wt_longstatus_print_tracking(struct wt_status *s)
 	strbuf_release(&sb);
 }
 
-static int has_unmerged(struct wt_status *s)
+static int has_unmerged(const struct wt_status *s)
 {
 	int i;
 
@@ -1069,7 +1070,7 @@ static int has_unmerged(struct wt_status *s)
 }
 
 static void show_merge_in_progress(struct wt_status *s,
-				struct wt_status_state *state,
+				const struct wt_status_state *state,
 				const char *color)
 {
 	if (has_unmerged(s)) {
@@ -1081,7 +1082,7 @@ static void show_merge_in_progress(struct wt_status *s,
 					 _("  (use \"git merge --abort\" to abort the merge)"));
 		}
 	} else {
-		s-> commitable = 1;
+		s-> committable = 1;
 		status_printf_ln(s, color,
 			_("All conflicts fixed but you are still merging."));
 		if (s->hints)
@@ -1091,8 +1092,8 @@ static void show_merge_in_progress(struct wt_status *s,
 	wt_longstatus_print_trailer(s);
 }
 
-static void show_am_in_progress(struct wt_status *s,
-				struct wt_status_state *state,
+static void show_am_in_progress(const struct wt_status *s,
+				const struct wt_status_state *state,
 				const char *color)
 {
 	status_printf_ln(s, color,
@@ -1130,7 +1131,7 @@ static char *read_line_from_git_path(const char *filename)
 	}
 }
 
-static int split_commit_in_progress(struct wt_status *s)
+static int split_commit_in_progress(const struct wt_status *s)
 {
 	int split_in_progress = 0;
 	char *head, *orig_head, *rebase_amend, *rebase_orig_head;
@@ -1224,8 +1225,8 @@ static int read_rebase_todolist(const char *fname, struct string_list *lines)
 	return 0;
 }
 
-static void show_rebase_information(struct wt_status *s,
-					struct wt_status_state *state,
+static void show_rebase_information(const struct wt_status *s,
+					const struct wt_status_state *state,
 					const char *color)
 {
 	if (state->rebase_interactive_in_progress) {
@@ -1278,8 +1279,8 @@ static void show_rebase_information(struct wt_status *s,
 	}
 }
 
-static void print_rebase_state(struct wt_status *s,
-				struct wt_status_state *state,
+static void print_rebase_state(const struct wt_status *s,
+				const struct wt_status_state *state,
 				const char *color)
 {
 	if (state->branch)
@@ -1292,8 +1293,8 @@ static void print_rebase_state(struct wt_status *s,
 				 _("You are currently rebasing."));
 }
 
-static void show_rebase_in_progress(struct wt_status *s,
-				struct wt_status_state *state,
+static void show_rebase_in_progress(const struct wt_status *s,
+				const struct wt_status_state *state,
 				const char *color)
 {
 	struct stat st;
@@ -1345,8 +1346,8 @@ static void show_rebase_in_progress(struct wt_status *s,
 	wt_longstatus_print_trailer(s);
 }
 
-static void show_cherry_pick_in_progress(struct wt_status *s,
-					struct wt_status_state *state,
+static void show_cherry_pick_in_progress(const struct wt_status *s,
+					const struct wt_status_state *state,
 					const char *color)
 {
 	status_printf_ln(s, color, _("You are currently cherry-picking commit %s."),
@@ -1364,8 +1365,8 @@ static void show_cherry_pick_in_progress(struct wt_status *s,
 	wt_longstatus_print_trailer(s);
 }
 
-static void show_revert_in_progress(struct wt_status *s,
-					struct wt_status_state *state,
+static void show_revert_in_progress(const struct wt_status *s,
+					const struct wt_status_state *state,
 					const char *color)
 {
 	status_printf_ln(s, color, _("You are currently reverting commit %s."),
@@ -1383,8 +1384,8 @@ static void show_revert_in_progress(struct wt_status *s,
 	wt_longstatus_print_trailer(s);
 }
 
-static void show_bisect_in_progress(struct wt_status *s,
-				struct wt_status_state *state,
+static void show_bisect_in_progress(const struct wt_status *s,
+				const struct wt_status_state *state,
 				const char *color)
 {
 	if (state->branch)
@@ -1538,11 +1539,15 @@ int wt_status_check_bisect(const struct worktree *wt,
 	return 0;
 }
 
-void wt_status_get_state(struct wt_status_state *state,
-			 int get_detached_from)
+void wt_status_get_state(
+		const struct wt_status *s, struct wt_status_state *state)
 {
+	int get_detached_from =
+		(s == NULL) || (s->branch && !strcmp(s->branch, "HEAD"));
 	struct stat st;
 	struct object_id oid;
+
+	memset(state, 0, sizeof(*state));
 
 	if (!stat(git_path_merge_head(), &st)) {
 		state->merge_in_progress = 1;
@@ -1564,8 +1569,15 @@ void wt_status_get_state(struct wt_status_state *state,
 		wt_status_get_detached_from(state);
 }
 
+void wt_status_clear_state(struct wt_status_state *state)
+{
+	free(state->branch);
+	free(state->onto);
+	free(state->detached_from);
+}
+
 static void wt_longstatus_print_state(struct wt_status *s,
-				      struct wt_status_state *state)
+				      const struct wt_status_state *state)
 {
 	const char *state_color = color(WT_STATUS_HEADER, s);
 	if (state->merge_in_progress)
@@ -1582,30 +1594,25 @@ static void wt_longstatus_print_state(struct wt_status *s,
 		show_bisect_in_progress(s, state, state_color);
 }
 
-static void wt_longstatus_print(struct wt_status *s)
+static void wt_longstatus_print(struct wt_status *s, const struct wt_status_state *state)
 {
 	const char *branch_color = color(WT_STATUS_ONBRANCH, s);
 	const char *branch_status_color = color(WT_STATUS_HEADER, s);
-	struct wt_status_state state;
-
-	memset(&state, 0, sizeof(state));
-	wt_status_get_state(&state,
-			    s->branch && !strcmp(s->branch, "HEAD"));
 
 	if (s->branch) {
 		const char *on_what = _("On branch ");
 		const char *branch_name = s->branch;
 		if (!strcmp(branch_name, "HEAD")) {
 			branch_status_color = color(WT_STATUS_NOBRANCH, s);
-			if (state.rebase_in_progress || state.rebase_interactive_in_progress) {
-				if (state.rebase_interactive_in_progress)
+			if (state->rebase_in_progress || state->rebase_interactive_in_progress) {
+				if (state->rebase_interactive_in_progress)
 					on_what = _("interactive rebase in progress; onto ");
 				else
 					on_what = _("rebase in progress; onto ");
-				branch_name = state.onto;
-			} else if (state.detached_from) {
-				branch_name = state.detached_from;
-				if (state.detached_at)
+				branch_name = state->onto;
+			} else if (state->detached_from) {
+				branch_name = state->detached_from;
+				if (state->detached_at)
 					on_what = _("HEAD detached at ");
 				else
 					on_what = _("HEAD detached from ");
@@ -1622,10 +1629,7 @@ static void wt_longstatus_print(struct wt_status *s)
 			wt_longstatus_print_tracking(s);
 	}
 
-	wt_longstatus_print_state(s, &state);
-	free(state.branch);
-	free(state.onto);
-	free(state.detached_from);
+	wt_longstatus_print_state(s, state);
 
 	if (s->is_initial) {
 		status_printf_ln(s, color(WT_STATUS_HEADER, s), "%s", "");
@@ -1657,14 +1661,14 @@ static void wt_longstatus_print(struct wt_status *s)
 					   "new files yourself (see 'git help status')."),
 					 s->untracked_in_ms / 1000.0);
 		}
-	} else if (s->commitable)
+	} else if (s->committable)
 		status_printf_ln(s, GIT_COLOR_NORMAL, _("Untracked files not listed%s"),
 			s->hints
 			? _(" (use -u option to show untracked files)") : "");
 
 	if (s->verbose)
 		wt_longstatus_print_verbose(s);
-	if (!s->commitable) {
+	if (!s->committable) {
 		if (s->amend)
 			status_printf_ln(s, GIT_COLOR_NORMAL, _("No changes"));
 		else if (s->nowarn)
@@ -1700,7 +1704,7 @@ static void wt_longstatus_print(struct wt_status *s)
 }
 
 static void wt_shortstatus_unmerged(struct string_list_item *it,
-			   struct wt_status *s)
+			   const struct wt_status *s)
 {
 	struct wt_status_change_data *d = it->util;
 	const char *how = "??";
@@ -1727,7 +1731,7 @@ static void wt_shortstatus_unmerged(struct string_list_item *it,
 }
 
 static void wt_shortstatus_status(struct string_list_item *it,
-			 struct wt_status *s)
+			 const struct wt_status *s)
 {
 	struct wt_status_change_data *d = it->util;
 
@@ -1770,7 +1774,7 @@ static void wt_shortstatus_status(struct string_list_item *it,
 }
 
 static void wt_shortstatus_other(struct string_list_item *it,
-				 struct wt_status *s, const char *sign)
+				 const struct wt_status *s, const char *sign)
 {
 	if (s->null_termination) {
 		fprintf(stdout, "%s %s%c", sign, it->string, 0);
@@ -1784,7 +1788,7 @@ static void wt_shortstatus_other(struct string_list_item *it,
 	}
 }
 
-static void wt_shortstatus_print_tracking(struct wt_status *s)
+static void wt_shortstatus_print_tracking(const struct wt_status *s)
 {
 	struct branch *branch;
 	const char *header_color = color(WT_STATUS_HEADER, s);
@@ -1860,7 +1864,7 @@ static void wt_shortstatus_print_tracking(struct wt_status *s)
 	fputc(s->null_termination ? '\0' : '\n', s->fp);
 }
 
-static void wt_shortstatus_print(struct wt_status *s)
+static void wt_shortstatus_print(const struct wt_status *s)
 {
 	struct string_list_item *it;
 
@@ -1924,17 +1928,13 @@ static void wt_porcelain_print(struct wt_status *s)
  * upstream.  When AHEAD_BEHIND_QUICK is requested and the branches
  * are different, '?' will be substituted for the actual count.
  */
-static void wt_porcelain_v2_print_tracking(struct wt_status *s)
+static void wt_porcelain_v2_print_tracking(const struct wt_status *s, const struct wt_status_state *state)
 {
 	struct branch *branch;
 	const char *base;
 	const char *branch_name;
-	struct wt_status_state state;
 	int ab_info, nr_ahead, nr_behind;
 	char eol = s->null_termination ? '\0' : '\n';
-
-	memset(&state, 0, sizeof(state));
-	wt_status_get_state(&state, s->branch && !strcmp(s->branch, "HEAD"));
 
 	fprintf(s->fp, "# branch.oid %s%c",
 			(s->is_initial ? "(initial)" : sha1_to_hex(s->sha1_commit)),
@@ -1946,10 +1946,10 @@ static void wt_porcelain_v2_print_tracking(struct wt_status *s)
 		if (!strcmp(s->branch, "HEAD")) {
 			fprintf(s->fp, "# branch.head %s%c", "(detached)", eol);
 
-			if (state.rebase_in_progress || state.rebase_interactive_in_progress)
-				branch_name = state.onto;
-			else if (state.detached_from)
-				branch_name = state.detached_from;
+			if (state->rebase_in_progress || state->rebase_interactive_in_progress)
+				branch_name = state->onto;
+			else if (state->detached_from)
+				branch_name = state->detached_from;
 			else
 				branch_name = "";
 		} else {
@@ -1983,10 +1983,6 @@ static void wt_porcelain_v2_print_tracking(struct wt_status *s)
 			}
 		}
 	}
-
-	free(state.branch);
-	free(state.onto);
-	free(state.detached_from);
 }
 
 /*
@@ -1994,7 +1990,7 @@ static void wt_porcelain_v2_print_tracking(struct wt_status *s)
  * fixed-length string of characters in the buffer provided.
  */
 static void wt_porcelain_v2_submodule_state(
-	struct wt_status_change_data *d,
+	const struct wt_status_change_data *d,
 	char sub[5])
 {
 	if (S_ISGITLINK(d->mode_head) ||
@@ -2017,8 +2013,8 @@ static void wt_porcelain_v2_submodule_state(
  * Fix-up changed entries before we print them.
  */
 static void wt_porcelain_v2_fix_up_changed(
-	struct string_list_item *it,
-	struct wt_status *s)
+	const struct string_list_item *it,
+	const struct wt_status *s)
 {
 	struct wt_status_change_data *d = it->util;
 
@@ -2066,8 +2062,8 @@ static void wt_porcelain_v2_fix_up_changed(
  * Print porcelain v2 info for tracked entries with changes.
  */
 static void wt_porcelain_v2_print_changed_entry(
-	struct string_list_item *it,
-	struct wt_status *s)
+	const struct string_list_item *it,
+	const struct wt_status *s)
 {
 	struct wt_status_change_data *d = it->util;
 	struct strbuf buf = STRBUF_INIT;
@@ -2130,8 +2126,8 @@ static void wt_porcelain_v2_print_changed_entry(
  * Print porcelain v2 status info for unmerged entries.
  */
 static void wt_porcelain_v2_print_unmerged_entry(
-	struct string_list_item *it,
-	struct wt_status *s)
+	const struct string_list_item *it,
+	const struct wt_status *s)
 {
 	struct wt_status_change_data *d = it->util;
 	const struct cache_entry *ce;
@@ -2211,8 +2207,8 @@ static void wt_porcelain_v2_print_unmerged_entry(
  * Print porcelain V2 status info for untracked and ignored entries.
  */
 static void wt_porcelain_v2_print_other(
-	struct string_list_item *it,
-	struct wt_status *s,
+	const struct string_list_item *it,
+	const struct wt_status *s,
 	char prefix)
 {
 	struct strbuf buf = STRBUF_INIT;
@@ -2242,14 +2238,14 @@ static void wt_porcelain_v2_print_other(
  * [<v2_ignored_items>]*
  *
  */
-static void wt_porcelain_v2_print(struct wt_status *s)
+static void wt_porcelain_v2_print(const struct wt_status *s, const struct wt_status_state *state)
 {
 	struct wt_status_change_data *d;
 	struct string_list_item *it;
 	int i;
 
 	if (s->show_branch)
-		wt_porcelain_v2_print_tracking(s);
+		wt_porcelain_v2_print_tracking(s, state);
 
 	for (i = 0; i < s->change.nr; i++) {
 		it = &(s->change.items[i]);
@@ -2276,7 +2272,9 @@ static void wt_porcelain_v2_print(struct wt_status *s)
 	}
 }
 
-void wt_status_print(struct wt_status *s)
+// FIXME: `struct wt_status *` should be `const struct wt_status` but because
+// `wt_porcelain_print()` modifies it, that has to first be fixed
+void wt_status_print(struct wt_status *s, const struct wt_status_state *state)
 {
 	switch (s->status_format) {
 	case STATUS_FORMAT_SHORT:
@@ -2286,14 +2284,14 @@ void wt_status_print(struct wt_status *s)
 		wt_porcelain_print(s);
 		break;
 	case STATUS_FORMAT_PORCELAIN_V2:
-		wt_porcelain_v2_print(s);
+		wt_porcelain_v2_print(s, state);
 		break;
 	case STATUS_FORMAT_UNSPECIFIED:
 		die("BUG: finalize_deferred_config() should have been called");
 		break;
 	case STATUS_FORMAT_NONE:
 	case STATUS_FORMAT_LONG:
-		wt_longstatus_print(s);
+		wt_longstatus_print(s, state);
 		break;
 	}
 }
