@@ -461,7 +461,7 @@ int git_config_from_parameters(config_fn_t fn, void *data)
 	envw = xstrdup(env);
 
 	if (sq_dequote_to_argv(envw, &argv, &nr, &alloc) < 0) {
-		ret = error("bogus format in " CONFIG_DATA_ENVIRONMENT);
+		ret = error("bogus format in %s", CONFIG_DATA_ENVIRONMENT);
 		goto out;
 	}
 
@@ -1409,11 +1409,11 @@ static int git_default_push_config(const char *var, const char *value)
 			push_default = PUSH_DEFAULT_UPSTREAM;
 		else if (!strcmp(value, "current"))
 			push_default = PUSH_DEFAULT_CURRENT;
-		else {
-			error("malformed value for %s: %s", var, value);
-			return error("Must be one of nothing, matching, simple, "
-				     "upstream or current.");
-		}
+		else
+			return error("malformed value for %s: %s\n"
+				     "Must be one of nothing, matching, simple, "
+				     "upstream or current.",
+				     var, value);
 		return 0;
 	}
 
