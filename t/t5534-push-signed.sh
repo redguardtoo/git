@@ -194,10 +194,12 @@ test_expect_success GPG 'fail without key and heed user.signingkey' '
 
 	EOF
 
-	unset GIT_COMMITTER_EMAIL &&
-	git config user.email hasnokey@nowhere.com &&
-	test_must_fail git push --signed dst noop ff +noff &&
-	git config user.signingkey committer@example.com &&
+	test_config user.email hasnokey@nowhere.com &&
+	(
+		unset GIT_COMMITTER_EMAIL &&
+		test_must_fail git push --signed dst noop ff +noff
+	) &&
+	test_config user.signingkey $GIT_COMMITTER_EMAIL &&
 	git push --signed dst noop ff +noff &&
 
 	(
@@ -241,11 +243,14 @@ test_expect_success GPGSM 'fail without key and heed user.signingkey x509' '
 	E_O_F
 
 	EOF
-	unset GIT_COMMITTER_EMAIL &&
+
 	test_config user.email hasnokey@nowhere.com &&
 	test_config user.signingkey "" &&
-	test_must_fail git push --signed dst noop ff +noff &&
-	test_config user.signingkey committer@example.com &&
+	(
+		unset GIT_COMMITTER_EMAIL &&
+		test_must_fail git push --signed dst noop ff +noff
+	) &&
+	test_config user.signingkey $GIT_COMMITTER_EMAIL &&
 	git push --signed dst noop ff +noff &&
 
 	(
