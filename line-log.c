@@ -850,7 +850,8 @@ static void queue_diffs(struct line_log_data *range,
 	}
 	DIFF_QUEUE_CLEAR(&diff_queued_diff);
 	diff_tree_oid(parent_tree_oid, tree_oid, "", opt);
-	if (opt->detect_rename && diff_might_be_rename()) {
+	if ((opt->detect_rename && diff_might_be_rename()) ||
+		(opt->pickaxe_opts & DIFF_PICKAXE_KINDS_MASK)) {
 		/* must look at the full tree diff to detect renames */
 		clear_pathspec(&opt->pathspec);
 		DIFF_QUEUE_CLEAR(&diff_queued_diff);
