@@ -1032,6 +1032,7 @@ static int process_diff_filepair(struct rev_info *rev,
 	struct diff_ranges diff;
 	mmfile_t file_parent, file_target;
 
+	fprintf(stderr,"====before: (*diff_out)=%d\n", (*diff_out));
 	assert(pair->two->path);
 	while (rg) {
 		assert(rg->path);
@@ -1069,6 +1070,7 @@ static int process_diff_filepair(struct rev_info *rev,
 
 	range_set_init(&tmp, 0);
 	range_set_map_across_diff(&tmp, &rg->ranges, &diff, diff_out);
+	fprintf(stderr,"====after: (*diff_out)->parent.nr=%s\n", (*diff_out)->parent.nr);
 	range_set_release(&rg->ranges);
 	range_set_move(&rg->ranges, &tmp);
 
@@ -1158,8 +1160,15 @@ static int process_ranges_ordinary_commit(struct rev_info *rev, struct commit *c
 	if (commit->parents)
 		parent = commit->parents->item;
 
+	if(strcmp("e65bb1674ca9a717ff5d33fd43b574df8e316513", hash_to_hex(commit->object.oid.hash)) == 0) {
+		printf("===debug for test-git-blame\n");
+	}
+	if(strcmp("4b5d16a6316c84a334b02ffa125cd408795e332f", hash_to_hex(commit->object.oid.hash)) == 0) {
+		printf("===debug for test-git-log\n");
+	}
 	queue_diffs(range, &rev->diffopt, &queue, commit, parent);
 	changed = process_all_files(&parent_range, rev, &queue, range);
+	fprintf(stderr,"=====commit=%s changed=%d\n", hash_to_hex(commit->object.oid.hash), changed);
 	if (parent)
 		add_line_range(rev, parent, parent_range);
 	free_line_log_data(parent_range);
